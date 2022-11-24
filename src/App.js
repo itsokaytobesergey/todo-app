@@ -9,6 +9,8 @@ import { ref as refdb, set, get, remove, onValue, update, child } from "firebase
 import "dayjs/locale/ru"
 import "./App.css"
 
+/** @module App */
+/** функция возвращает root компонент приложения*/
 function App() {
   //dayjs
   let advancedFormat = require("dayjs/plugin/advancedFormat")
@@ -23,21 +25,6 @@ function App() {
   const [progress, setProgress] = useState(0)
   const [isSubmitButtonVisible, setIsSubmitButtonVisible] = useState(true)
   const [todoURL, setTodoURL] = useState(null)
-
-  //updateData
-  const updateDataAfterReturning = () => {
-    get(refdb(database, `todos/`)).then((snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val()
-        if (data === null) return
-        let arr = []
-        Object.keys(data).forEach((key) => {
-          arr.push(data[key])
-        })
-        setTodos(arr)
-      }
-    })
-  }
 
   // Firebase
   //// получение данных с firebase
@@ -166,10 +153,49 @@ function App() {
         attachedFile: selectedFile.name,
       })
     }
-    updateDataAfterReturning()
+
+    ////updateData
+    get(refdb(database, `todos/`)).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val()
+        if (data === null) return
+        let arr = []
+        Object.keys(data).forEach((key) => {
+          arr.push(data[key])
+        })
+        setTodos(arr)
+      }
+    })
+
+    ////update isDone if todayday = newdate
+    let todaydate = dayjs(new Date()).locale("ru").format("DD.MM.YYYY")
+
+    get(refdb(database, `todos/${id}/newdate`)).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val()
+        if (data === null) return
+        if (data === todaydate) {
+          get(refdb(database, `todos/${id}/isDone`)).then((snapshot) => {
+            if (snapshot.exists()) {
+              const data = snapshot.val()
+              if (data === null) return
+              if (data === true) {
+                update(refdb(database, `todos/${id}`), {
+                  isDone: false,
+                })
+              }
+            }
+          })
+        }
+      }
+    })
+
+    ////clear attached file input
+    setTestInputKey(Date.now())
     setTodoURL(null)
     setSelectedFile(null)
   }
+
   //кнопка done
   const toggleTodoHandlerDone = (id) => {
     // setTodos(
@@ -218,5 +244,4 @@ function App() {
     </div>
   )
 }
-
 export default App
