@@ -9,10 +9,12 @@ const TodoForm = (props) => {
   const [title, setTitle] = useState("")
   const [text, setText] = useState("")
 
+  //пока файл загружается, обновляем состояние кнопки submit - визуальное изменение фона
   useEffect(() => {
     props.setIsSubmitButtonVisible(true)
   }, [props.downloadURL])
 
+  //сабмит формы
   const onSubmitHandler = (event) => {
     event.preventDefault()
     //reset for input of attached files
@@ -35,7 +37,7 @@ const TodoForm = (props) => {
     props.setProgress(0)
   }
 
-  //datekeeper
+  //datekeeper для наглядного отображение календаря
   const [startDate, setStartDate] = useState(new Date())
   const [isOpen, setIsOpen] = useState(false)
   const handleChange = (e) => {
