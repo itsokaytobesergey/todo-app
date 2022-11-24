@@ -5,16 +5,13 @@ import TodoForm from "./components/TodoForm"
 import TodoList from "./components/TodoList"
 import { storage, database } from "./components/firebase"
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"
-import { ref as refdb, set, get, remove, onValue, update, child } from "firebase/database"
+import { ref as refdb, set, get, remove, onValue, update } from "firebase/database"
 import "dayjs/locale/ru"
 import "./App.css"
 
-/** @module App */
-/** функция возвращает root компонент приложения*/
 function App() {
-  //dayjs
-  let advancedFormat = require("dayjs/plugin/advancedFormat")
-  dayjs.extend(advancedFormat)
+  //установка даты для сегодня
+  const todaydate = dayjs(new Date()).locale("ru").format("DD.MM.YYYY")
 
   const [todos, setTodos] = useState([])
   const [editTodoTitle, setEditTodoTitle] = useState("")
@@ -37,8 +34,7 @@ function App() {
       Object.keys(data).forEach((key) => {
         arr.push(data[key])
       })
-      let filteredArr = arr.filter((todo) => {
-        let todaydate = dayjs(new Date()).locale("ru").format("DD.MM.YYYY")
+      arr.filter((todo) => {
         return todaydate > todo.newdate
           ? update(refdb(database, `todos/${todo.id}`), {
               isDone: true,
@@ -53,15 +49,13 @@ function App() {
   const selectFileHandler = (event) => {
     setSelectedFile(event.target.files[0])
   }
+
   const uploadFileHandler = () => {
     if (!selectedFile) {
       return alert("Please upload an image first!")
     }
-
     const storageRef = ref(storage, `/files/${selectedFile.name}`)
-
     const uploadTask = uploadBytesResumable(storageRef, selectedFile)
-
     uploadTask.on(
       "state_changed",
       (snapshot) => {
@@ -79,7 +73,7 @@ function App() {
     setIsSubmitButtonVisible(false)
   }
 
-  //function to update todo parameters in FireBase
+  //function to update todo parameters in FireBase after creating todo
   const writeUserData = (todo) => {
     set(refdb(database, "todos/" + todo.id), {
       id: todo.id,
@@ -96,7 +90,6 @@ function App() {
   //add new todo
   const addTodoHandler = (title, text, startDate, isDone, isEditing, attachedFileURL) => {
     const newdate = dayjs(startDate).locale("ru").format("DD.MM.YYYY")
-
     const attachedfile = selectedFile ? selectedFile.name : "отсутствует"
 
     const newTodo = {
@@ -154,7 +147,7 @@ function App() {
       })
     }
 
-    ////updateData
+    ////update todos data on clien side after saving edited todo
     get(refdb(database, `todos/`)).then((snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val()
@@ -167,9 +160,7 @@ function App() {
       }
     })
 
-    ////update isDone if todayday = newdate
-    let todaydate = dayjs(new Date()).locale("ru").format("DD.MM.YYYY")
-
+    ////update isDone on the server side if todayday = newdate
     get(refdb(database, `todos/${id}/newdate`)).then((snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val()
@@ -198,11 +189,6 @@ function App() {
 
   //кнопка done
   const toggleTodoHandlerDone = (id) => {
-    // setTodos(
-    //   todos.map((todo) => {
-    //     return todo.id === id ? { ...todo, isDone: !todo.isDone, isEditing: false } : { ...todo }
-    //   })
-    // )
     let isDoneForDb
     todos.filter((todo) => {
       return todo.id === id ? (isDoneForDb = todo.isDone) : isDoneForDb
