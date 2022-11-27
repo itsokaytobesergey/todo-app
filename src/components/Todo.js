@@ -12,6 +12,7 @@ const Todo = (props) => {
     setEditTodoText,
     editTodoText,
   } = props
+  const deleteButtonPicStyle = { border: "2px solid red" }
   return (
     <div className={`todo__item ${todo.isDone ? "isdone" : ""}`}>
       <div className="todo__text">
@@ -56,18 +57,29 @@ const Todo = (props) => {
         )}
       </div>
 
-      {todo.isEditing ? (
-        <button
-          className="Todo_button"
-          onClick={() => {
-            props.deleteTodoPic(todo.id)
-          }}
-        >
-          DeletePic
-        </button>
-      ) : (
-        ""
-      )}
+      {todo.isEditing &&
+        todo.attachedFile !== "отсутствует" &&
+        (props.deleteTodoPicHandler ? (
+          <button
+            style={deleteButtonPicStyle}
+            className={`Todo_button`}
+            onClick={() => {
+              props.deleteTodoPic(todo.id)
+            }}
+          >
+            DeletePic
+          </button>
+        ) : (
+          <button
+            className={`Todo_button`}
+            onClick={() => {
+              props.deleteTodoPic(todo.id)
+            }}
+          >
+            DeletePic
+          </button>
+        ))}
+
       {todo.isEditing ? (
         <button
           className="Todo_button"

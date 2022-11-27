@@ -14,6 +14,18 @@ const TodoForm = (props) => {
     props.setIsSubmitButtonVisible(true)
   }, [props.downloadURL])
 
+  //datekeeper для наглядного отображение календаря
+  const [startDate, setStartDate] = useState(new Date())
+  const [isOpen, setIsOpen] = useState(false)
+  const handleChange = (e) => {
+    setIsOpen(!isOpen)
+    setStartDate(e)
+  }
+  const handleClick = (e) => {
+    e.preventDefault()
+    setIsOpen(!isOpen)
+  }
+
   //сабмит формы
   const onSubmitHandler = (event) => {
     event.preventDefault()
@@ -27,26 +39,13 @@ const TodoForm = (props) => {
       isDone = true
     }
     const attachedFileURL = props.downloadURL
-    let isEditing = false
-    addTodo(title, text, startDate, isDone, isEditing, attachedFileURL)
+    addTodo(title, text, startDate, isDone, attachedFileURL)
     setTitle("")
     setText("")
     isDone = false
 
     //reset progress bar
     props.setProgress(0)
-  }
-
-  //datekeeper для наглядного отображение календаря
-  const [startDate, setStartDate] = useState(new Date())
-  const [isOpen, setIsOpen] = useState(false)
-  const handleChange = (e) => {
-    setIsOpen(!isOpen)
-    setStartDate(e)
-  }
-  const handleClick = (e) => {
-    e.preventDefault()
-    setIsOpen(!isOpen)
   }
   return (
     <>
@@ -84,12 +83,12 @@ const TodoForm = (props) => {
 
         {props.isSubmitButtonVisible && (
           <button type="submit" className="form__button">
-            Submit
+            Add todo
           </button>
         )}
         {!props.isSubmitButtonVisible && (
           <div type="submit" className="form__button isNotAvailable">
-            Submit
+            Wait
           </div>
         )}
 

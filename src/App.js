@@ -34,13 +34,14 @@ function App() {
       Object.keys(data).forEach((key) => {
         arr.push(data[key])
       })
-      arr.filter((todo) => {
-        return todaydate > todo.newdate
-          ? update(refdb(database, `todos/${todo.id}`), {
-              isDone: true,
-            })
-          : console.log()
+
+      const expiredTodos = arr.filter((todo) => todaydate > todo.newdate)
+      expiredTodos.forEach((todo) => {
+        update(refdb(database, `todos/${todo.id}`), {
+          isDone: true,
+        })
       })
+
       setTodos(arr)
     })
   }, [setTodos])
@@ -73,22 +74,8 @@ function App() {
     setIsSubmitButtonVisible(false)
   }
 
-  //function to update todo parameters in FireBase after creating todo
-  const writeUserData = (todo) => {
-    set(refdb(database, "todos/" + todo.id), {
-      id: todo.id,
-      isDone: todo.isDone,
-      isEditing: todo.isEditing,
-      title: todo.title,
-      text: todo.text,
-      newdate: todo.newdate,
-      attachedFile: todo.attachedFile,
-      attachedFileURL: todo.attachedFileURL,
-    })
-  }
-
   //add new todo
-  const addTodoHandler = (title, text, startDate, isDone, isEditing, attachedFileURL) => {
+  const addTodoHandler = (title, text, startDate, isDone, isEditing = false, attachedFileURL = false) => {
     const newdate = dayjs(startDate).locale("ru").format("DD.MM.YYYY")
     const attachedfile = selectedFile ? selectedFile.name : "отсутствует"
 
@@ -106,18 +93,29 @@ function App() {
     setSelectedFile(null)
   }
 
+  //function to update todo parameters in FireBase after creating todo
+  const writeUserData = (todo) => {
+    set(refdb(database, "todos/" + todo.id), {
+      id: todo.id,
+      isDone: todo.isDone,
+      isEditing: todo.isEditing,
+      title: todo.title,
+      text: todo.text,
+      newdate: todo.newdate,
+      attachedFile: todo.attachedFile,
+      attachedFileURL: todo.attachedFileURL,
+    })
+  }
+
   //delete todo
   const deleteTodoHandler = (id) => {
-    setTodos(todos.filter((todo) => todo.id !== id))
-
     remove(refdb(database, `todos/${id}`))
+    setTodos(todos.filter((todo) => todo.id !== id))
   }
   //delete todo pic
+  const [deleteTodoPicHandler, setDeleteTodoPicHandler] = useState(false)
   const deleteTodoPic = (id) => {
-    remove(refdb(database, `todos/${id}/attachedFileURL`))
-    update(refdb(database, `todos/${id}/`), {
-      attachedFile: "отсутствует",
-    })
+    setDeleteTodoPicHandler(!deleteTodoPicHandler)
   }
   //кнопка edit
   const toggleTodoHandlerEdit = (id) => {
@@ -130,6 +128,8 @@ function App() {
 
   //кнопка save edit
   const returnEditedTodo = (id) => {
+    setProgress(0)
+
     if (!todoURL) {
       update(refdb(database, `todos/${id}`), {
         title: editTodoTitle,
@@ -146,8 +146,17 @@ function App() {
         attachedFile: selectedFile.name,
       })
     }
+    ////проверка и очистка картинки и названия после save edit
+    if (deleteTodoPicHandler === true) {
+      remove(refdb(database, `todos/${id}/attachedFileURL`))
+      update(refdb(database, `todos/${id}/`), {
+        attachedFile: "отсутствует",
+      })
+      setDeleteTodoPicHandler(false)
+    }
 
     ////update todos data on clien side after saving edited todo
+
     get(refdb(database, `todos/`)).then((snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val()
@@ -189,14 +198,13 @@ function App() {
 
   //кнопка done
   const toggleTodoHandlerDone = (id) => {
-    let isDoneForDb
-    todos.filter((todo) => {
-      return todo.id === id ? (isDoneForDb = todo.isDone) : isDoneForDb
-    })
+    const pickTodoIsDone = todos.find((todo) => todo.id === id)
+
     update(refdb(database, `todos/${id}`), {
-      isDone: !isDoneForDb,
+      isDone: !pickTodoIsDone.isDone,
     })
   }
+
   return (
     <div className="app">
       <h1>Todo App</h1>
@@ -226,6 +234,7 @@ function App() {
         editTodoDate={editTodoDate}
         setEditTodoDate={setEditTodoDate}
         deleteTodoPic={deleteTodoPic}
+        deleteTodoPicHandler={deleteTodoPicHandler}
       />
     </div>
   )
