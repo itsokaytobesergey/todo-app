@@ -43,6 +43,7 @@ function App() {
       })
 
       setTodos(arr)
+      console.log(arr)
     })
   }, [setTodos])
 
@@ -75,7 +76,7 @@ function App() {
   }
 
   //add new todo
-  const addTodoHandler = (title, text, startDate, isDone, isEditing = false, attachedFileURL = false) => {
+  const addTodoHandler = (title, text, startDate, isDone, attachedFileURL, isEditing = false) => {
     const newdate = dayjs(startDate).locale("ru").format("DD.MM.YYYY")
     const attachedfile = selectedFile ? selectedFile.name : "отсутствует"
 
