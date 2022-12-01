@@ -1,4 +1,6 @@
 import React from "react"
+import dayjs from "dayjs"
+import "dayjs/locale/ru"
 
 const Todo = (props) => {
   const {
@@ -47,7 +49,7 @@ const Todo = (props) => {
           {todo.isEditing && (
             <input value={props.editTodoDate} onChange={(e) => props.setEditTodoDate(e.target.value)} />
           )}
-          {!todo.isEditing && todo.newdate}
+          {!todo.isEditing && dayjs(todo.newdate).format("DD.MM.YYYY")}
           {/* {`Data: ${todo.newdate}`} */}
         </div>
         <div>{`Прикрепленный файл: ${todo.attachedFile}`}</div>

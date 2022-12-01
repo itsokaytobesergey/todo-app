@@ -11,7 +11,7 @@ import "./App.css"
 
 function App() {
   //установка даты для сегодня
-  const todaydate = dayjs(new Date()).locale("ru").format("DD.MM.YYYY")
+  const todaydate = dayjs(new Date()).hour(0).minute(0).second(0)
 
   const [todos, setTodos] = useState([])
   const [editTodoTitle, setEditTodoTitle] = useState("")
@@ -35,7 +35,8 @@ function App() {
         arr.push(data[key])
       })
 
-      const expiredTodos = arr.filter((todo) => todaydate > todo.newdate)
+      const expiredTodos = arr.filter((todo) => todaydate > dayjs(todo.newdate))
+      console.log(expiredTodos)
       expiredTodos.forEach((todo) => {
         update(refdb(database, `todos/${todo.id}`), {
           isDone: true,
@@ -43,7 +44,6 @@ function App() {
       })
 
       setTodos(arr)
-      console.log(arr)
     })
   }, [setTodos])
 
@@ -77,7 +77,7 @@ function App() {
 
   //add new todo
   const addTodoHandler = (title, text, startDate, isDone, attachedFileURL, isEditing = false) => {
-    const newdate = dayjs(startDate).locale("ru").format("DD.MM.YYYY")
+    const newdate = dayjs(startDate).$d.toString()
     const attachedfile = selectedFile ? selectedFile.name : "отсутствует"
 
     const newTodo = {
@@ -90,6 +90,8 @@ function App() {
       attachedFileURL,
       attachedFile: attachedfile,
     }
+    console.log(dayjs(startDate))
+    console.log(newTodo)
     writeUserData(newTodo)
     setSelectedFile(null)
   }
@@ -170,12 +172,12 @@ function App() {
       }
     })
 
-    ////update isDone on the server side if todayday = newdate
+    //update isDone on the server side if todayday = newdate
     get(refdb(database, `todos/${id}/newdate`)).then((snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val()
         if (data === null) return
-        if (data === todaydate) {
+        if (dayjs(data) === todaydate) {
           get(refdb(database, `todos/${id}/isDone`)).then((snapshot) => {
             if (snapshot.exists()) {
               const data = snapshot.val()
