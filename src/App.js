@@ -5,13 +5,13 @@ import TodoForm from "./components/TodoForm"
 import TodoList from "./components/TodoList"
 import { storage, database } from "./components/firebase"
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage"
-import { ref as refdb, set, get, remove, onValue, update } from "firebase/database"
+import { ref as refdb, set, get, remove, onValue, update, push, child } from "firebase/database"
 import "dayjs/locale/ru"
 import "./App.css"
 
 function App() {
   //установка даты для сегодня
-  const todaydate = dayjs(new Date()).hour(0).minute(0).second(0)
+  const todaydate = dayjs(new Date()).hour(0).minute(0).second(0).millisecond(0)
 
   const [todos, setTodos] = useState([])
   const [editTodoTitle, setEditTodoTitle] = useState("")
@@ -36,13 +36,12 @@ function App() {
       })
 
       const expiredTodos = arr.filter((todo) => todaydate > dayjs(todo.newdate))
-      console.log(expiredTodos)
+      // console.log(expiredTodos)
       expiredTodos.forEach((todo) => {
-        update(refdb(database, `todos/${todo.id}`), {
+        update(refdb(database, `todos/${todo.key}`), {
           isDone: true,
         })
       })
-
       setTodos(arr)
     })
   }, [setTodos])
@@ -90,15 +89,16 @@ function App() {
       attachedFileURL,
       attachedFile: attachedfile,
     }
-    console.log(dayjs(startDate))
-    console.log(newTodo)
+    // console.log(newTodo)
     writeUserData(newTodo)
     setSelectedFile(null)
   }
 
   //function to update todo parameters in FireBase after creating todo
+
   const writeUserData = (todo) => {
-    set(refdb(database, "todos/" + todo.id), {
+    const newTodoKey = push(child(refdb(database), `todos/${todo.id}`)).key
+    set(refdb(database, "todos/" + newTodoKey), {
       id: todo.id,
       isDone: todo.isDone,
       isEditing: todo.isEditing,
@@ -107,13 +107,14 @@ function App() {
       newdate: todo.newdate,
       attachedFile: todo.attachedFile,
       attachedFileURL: todo.attachedFileURL,
+      key: newTodoKey,
     })
   }
 
   //delete todo
   const deleteTodoHandler = (id) => {
     remove(refdb(database, `todos/${id}`))
-    setTodos(todos.filter((todo) => todo.id !== id))
+    setTodos(todos.filter((todo) => todo.key !== id))
   }
   //delete todo pic
   const [deleteTodoPicHandler, setDeleteTodoPicHandler] = useState(false)
@@ -122,29 +123,49 @@ function App() {
   }
   //кнопка edit
   const toggleTodoHandlerEdit = (id) => {
-    setTodos(
-      todos.map((todo) => {
-        return todo.id === id ? { ...todo, isEditing: !todo.isEditing } : { ...todo, isEditing: false }
-      })
-    )
+    update(refdb(database, `todos/${id}`), {
+      isEditing: true,
+    })
   }
 
   //кнопка save edit
   const returnEditedTodo = (id) => {
     setProgress(0)
 
+    ////обновление даты в FireBase после ввода новой в инпут
+    get(refdb(database, `todos/${id}/newdate`)).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val()
+
+        let day = editTodoDate.slice(0, 2)
+        let month = editTodoDate.slice(3, 5)
+        let year = editTodoDate.slice(6, 10)
+        setNewDataToServer(day, month, year)
+
+        function setNewDataToServer(day, month, year) {
+          let newDataToServer = dayjs(data)
+            .date(day)
+            .month(month - 1)
+            .year(year)
+            .$d.toString()
+
+          update(refdb(database, `todos/${id}`), {
+            newdate: newDataToServer,
+          })
+        }
+      }
+    })
+
     if (!todoURL) {
       update(refdb(database, `todos/${id}`), {
         title: editTodoTitle,
         text: editTodoText,
-        newdate: editTodoDate,
       })
     }
     if (todoURL) {
       update(refdb(database, `todos/${id}`), {
         title: editTodoTitle,
         text: editTodoText,
-        newdate: editTodoDate,
         attachedFileURL: todoURL,
         attachedFile: selectedFile.name,
       })
@@ -158,50 +179,41 @@ function App() {
       setDeleteTodoPicHandler(false)
     }
 
-    ////update todos data on clien side after saving edited todo
-
-    get(refdb(database, `todos/`)).then((snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val()
-        if (data === null) return
-        let arr = []
-        Object.keys(data).forEach((key) => {
-          arr.push(data[key])
-        })
-        setTodos(arr)
-      }
-    })
-
-    //update isDone on the server side if todayday = newdate
-    get(refdb(database, `todos/${id}/newdate`)).then((snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val()
-        if (data === null) return
-        if (dayjs(data) === todaydate) {
-          get(refdb(database, `todos/${id}/isDone`)).then((snapshot) => {
-            if (snapshot.exists()) {
-              const data = snapshot.val()
-              if (data === null) return
-              if (data === true) {
-                update(refdb(database, `todos/${id}`), {
-                  isDone: false,
-                })
-              }
-            }
-          })
-        }
-      }
-    })
+    //// update isDone on the server side if todayday = newdate
+    // get(refdb(database, `todos/${id}/newdate`)).then((snapshot) => {
+    //   if (snapshot.exists()) {
+    //     const data = snapshot.val()
+    //     if (data === null) return
+    //     if (dayjs(data).hour(0).minute(0).second(0).millisecond(0).$d.toString() === dayjs(todaydate).$d.toString()) {
+    //       get(refdb(database, `todos/${id}/isDone`)).then((snapshot) => {
+    //         if (snapshot.exists()) {
+    //           const data = snapshot.val()
+    //           console.log(`DATA TRUE`)
+    //           if (data === null) return
+    //           if (data === true) {
+    //             update(refdb(database, `todos/${id}`), {
+    //               isDone: false,
+    //             })
+    //           }
+    //         }
+    //       })
+    //     }
+    //   }
+    // })
 
     ////clear attached file input
     setTestInputKey(Date.now())
     setTodoURL(null)
     setSelectedFile(null)
+
+    update(refdb(database, `todos/${id}`), {
+      isEditing: false,
+    })
   }
 
   //кнопка done
   const toggleTodoHandlerDone = (id) => {
-    const pickTodoIsDone = todos.find((todo) => todo.id === id)
+    const pickTodoIsDone = todos.find((todo) => todo.key === id)
 
     update(refdb(database, `todos/${id}`), {
       isDone: !pickTodoIsDone.isDone,

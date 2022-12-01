@@ -50,7 +50,6 @@ const Todo = (props) => {
             <input value={props.editTodoDate} onChange={(e) => props.setEditTodoDate(e.target.value)} />
           )}
           {!todo.isEditing && dayjs(todo.newdate).format("DD.MM.YYYY")}
-          {/* {`Data: ${todo.newdate}`} */}
         </div>
         <div>{`Прикрепленный файл: ${todo.attachedFile}`}</div>
         {todo.isEditing ? <p>To upload new pic just attach and upload new pic and click "save edit"</p> : ""}
@@ -66,7 +65,7 @@ const Todo = (props) => {
             style={deleteButtonPicStyle}
             className={`Todo_button`}
             onClick={() => {
-              props.deleteTodoPic(todo.id)
+              props.deleteTodoPic(todo.key)
             }}
           >
             DeletePic
@@ -75,7 +74,7 @@ const Todo = (props) => {
           <button
             className={`Todo_button`}
             onClick={() => {
-              props.deleteTodoPic(todo.id)
+              props.deleteTodoPic(todo.key)
             }}
           >
             DeletePic
@@ -86,7 +85,7 @@ const Todo = (props) => {
         <button
           className="Todo_button"
           onClick={() => {
-            returnEditedTodo(todo.id)
+            returnEditedTodo(todo.key)
           }}
         >
           Save edit
@@ -98,8 +97,8 @@ const Todo = (props) => {
             onClick={() => {
               setEditTodoTitle(todo.title)
               setEditTodoText(todo.text)
-              props.setEditTodoDate(todo.newdate)
-              editTodo(todo.id)
+              props.setEditTodoDate(dayjs(todo.newdate).format("DD.MM.YYYY"))
+              editTodo(todo.key)
             }}
           >
             Edit
@@ -110,7 +109,7 @@ const Todo = (props) => {
       <button
         className="Todo_button"
         onClick={() => {
-          toggleTodo(todo.id)
+          toggleTodo(todo.key)
         }}
       >
         Done
@@ -118,7 +117,7 @@ const Todo = (props) => {
       <button
         className="Todo_button"
         onClick={() => {
-          deleteTodo(todo.id)
+          deleteTodo(todo.key)
         }}
       >
         Delete
