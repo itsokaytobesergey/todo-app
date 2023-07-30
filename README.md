@@ -9,3 +9,5 @@
 - бэк-частью в FireBase
 
 Stack : HTML5, CSS, JS, React, Create react app.
+
+P.S. не является рабочим проектом в виду изменений на стороне FireBase
